@@ -46,6 +46,19 @@ class InteractionRepository:
         )
         return list(result.scalars().all())
 
+    async def list_recent_inbound(self, limit: int = 10) -> list[InteractionRow]:
+        """Get recent inbound interactions that have no response yet."""
+        result = await self.session.execute(
+            select(InteractionRow)
+            .where(
+                InteractionRow.direction == "inbound",
+                InteractionRow.response.is_(None),
+            )
+            .order_by(InteractionRow.created_at.desc())
+            .limit(limit)
+        )
+        return list(result.scalars().all())
+
     async def get_stats(self, prospect_id: str | None = None) -> dict:
         """Get interaction statistics."""
         query = select(

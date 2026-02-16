@@ -12,6 +12,7 @@ from seal_agent.core.agent import SealAgent
 from seal_agent.api.routes import agent as agent_routes
 from seal_agent.api.routes import prospects as prospect_routes
 from seal_agent.api.routes import deals as deal_routes
+from seal_agent.api.middleware import setup_middleware
 
 
 @asynccontextmanager
@@ -36,6 +37,9 @@ def create_app() -> FastAPI:
         version=settings.app_version,
         lifespan=lifespan,
     )
+
+    # Set up middleware (CORS, auth, rate limiting, error handling)
+    setup_middleware(app)
 
     # Register route modules
     app.include_router(agent_routes.router, prefix="/api/agent", tags=["Agent"])

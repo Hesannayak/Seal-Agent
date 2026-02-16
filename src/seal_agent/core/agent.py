@@ -9,6 +9,9 @@ from seal_agent.core.heartbeat import HeartbeatEngine
 from seal_agent.core.memory import MemoryEngine
 from seal_agent.core.evolution import EvolutionEngine
 from seal_agent.core.reasoning import ReasoningEngine
+from seal_agent.skills.prospecting import ProspectingSkill
+from seal_agent.skills.outreach import OutreachSkill
+from seal_agent.skills.deal_management import DealManagementSkill
 
 log = structlog.get_logger()
 
@@ -23,6 +26,9 @@ class SealAgent:
         self.evolution = EvolutionEngine()
         self.reasoning = ReasoningEngine()
         self._running = False
+
+        # Skills registry
+        self.skills: dict[str, ProspectingSkill | OutreachSkill | DealManagementSkill] = {}
 
     async def initialize(self) -> None:
         """Initialize all agent subsystems."""
@@ -40,7 +46,14 @@ class SealAgent:
         # Initialize reasoning engine with soul context
         await self.reasoning.initialize(soul=self.soul)
 
-        log.info("All subsystems initialized")
+        # Register skills
+        self.skills = {
+            "prospecting": ProspectingSkill(),
+            "outreach": OutreachSkill(reasoning_engine=self.reasoning),
+            "deal_management": DealManagementSkill(),
+        }
+
+        log.info("All subsystems initialized", skills=list(self.skills.keys()))
 
     async def run(self) -> None:
         """Start the agent's main loop."""
@@ -97,3 +110,22 @@ class SealAgent:
         )
 
         return response
+
+    async def execute_skill(
+        self, skill_name: str, action: str, params: dict
+    ) -> dict:
+        """Execute a skill action.
+
+        Args:
+            skill_name: Name of the skill to execute.
+            action: Action within the skill.
+            params: Parameters for the action.
+
+        Returns:
+            The skill result.
+        """
+        skill = self.skills.get(skill_name)
+        if not skill:
+            return {"error": f"Unknown skill: {skill_name}"}
+
+        return await skill.execute(action, params)

@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "The Claude of Sales — A self-learning, evolving AI sales agent"
 readme = "README.md"
 license = "MIT"
-requires-python = ">=3.12"
+requires-python = ">=3.11"
 authors = [
     { name = "Seal-Agent Team" },
 ]
