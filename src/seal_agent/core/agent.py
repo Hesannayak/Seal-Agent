@@ -9,9 +9,17 @@ from seal_agent.core.heartbeat import HeartbeatEngine
 from seal_agent.core.memory import MemoryEngine
 from seal_agent.core.evolution import EvolutionEngine
 from seal_agent.core.reasoning import ReasoningEngine
+from seal_agent.skills.base import BaseSkill
 from seal_agent.skills.prospecting import ProspectingSkill
 from seal_agent.skills.outreach import OutreachSkill
 from seal_agent.skills.deal_management import DealManagementSkill
+from seal_agent.skills.follow_up import FollowUpSkill
+from seal_agent.skills.negotiation import NegotiationSkill
+from seal_agent.skills.research import ResearchSkill
+from seal_agent.skills.proposal import ProposalSkill
+from seal_agent.skills.scheduling import SchedulingSkill
+from seal_agent.skills.analytics import AnalyticsSkill
+from seal_agent.skills.objection import ObjectionSkill
 
 log = structlog.get_logger()
 
@@ -28,7 +36,7 @@ class SealAgent:
         self._running = False
 
         # Skills registry
-        self.skills: dict[str, ProspectingSkill | OutreachSkill | DealManagementSkill] = {}
+        self.skills: dict[str, BaseSkill] = {}
 
     async def initialize(self) -> None:
         """Initialize all agent subsystems."""
@@ -51,6 +59,13 @@ class SealAgent:
             "prospecting": ProspectingSkill(),
             "outreach": OutreachSkill(reasoning_engine=self.reasoning),
             "deal_management": DealManagementSkill(),
+            "follow_up": FollowUpSkill(reasoning_engine=self.reasoning),
+            "negotiation": NegotiationSkill(reasoning_engine=self.reasoning),
+            "research": ResearchSkill(reasoning_engine=self.reasoning),
+            "proposal": ProposalSkill(reasoning_engine=self.reasoning),
+            "scheduling": SchedulingSkill(),
+            "analytics": AnalyticsSkill(),
+            "objection": ObjectionSkill(reasoning_engine=self.reasoning),
         }
 
         log.info("All subsystems initialized", skills=list(self.skills.keys()))
