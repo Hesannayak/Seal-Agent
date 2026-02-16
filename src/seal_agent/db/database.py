@@ -63,12 +63,26 @@ async def get_session() -> AsyncGenerator[AsyncSession]:
 
 
 async def init_db() -> None:
-    """Initialize database tables and extensions."""
+    """Initialize database — runs Alembic migrations to HEAD.
+
+    Falls back to metadata.create_all if Alembic is unavailable (e.g. in tests).
+    """
     engine = get_engine()
     async with engine.begin() as conn:
         await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
-        await conn.run_sync(Base.metadata.create_all)
-    log.info("Database initialized")
+
+    try:
+        from alembic import command
+        from alembic.config import Config
+
+        alembic_cfg = Config("alembic.ini")
+        command.upgrade(alembic_cfg, "head")
+        log.info("Database initialized via Alembic migrations")
+    except Exception:
+        log.warning("Alembic migration failed, falling back to create_all")
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        log.info("Database initialized via create_all fallback")
 
 
 async def close_db() -> None:

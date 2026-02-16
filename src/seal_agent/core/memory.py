@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import anthropic
+import httpx
 import structlog
 
 from seal_agent.config import settings
@@ -27,44 +27,64 @@ class MemoryEngine:
 
     def __init__(self) -> None:
         self._initialized = False
-        self._embedding_client: anthropic.AsyncAnthropic | None = None
+        self._voyage_client: httpx.AsyncClient | None = None
 
     async def initialize(self) -> None:
         """Initialize the memory subsystem and database connections."""
         log.info("Initializing memory engine")
         await init_db()
-        self._embedding_client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key)
+
+        voyage_key = settings.voyage_api_key or settings.anthropic_api_key
+        if voyage_key:
+            self._voyage_client = httpx.AsyncClient(
+                base_url="https://api.voyageai.com/v1",
+                headers={
+                    "Authorization": f"Bearer {voyage_key}",
+                    "Content-Type": "application/json",
+                },
+                timeout=30.0,
+            )
+            log.info("Voyage embedding client initialized", model=settings.voyage_model)
+        else:
+            log.warning("No Voyage/Anthropic API key — using fallback embeddings")
+
         self._initialized = True
         log.info("Memory engine initialized")
 
     async def close(self) -> None:
-        """Close database connections."""
+        """Close database connections and HTTP clients."""
         log.info("Closing memory engine")
+        if self._voyage_client:
+            await self._voyage_client.aclose()
+            self._voyage_client = None
         await close_db()
         self._initialized = False
 
     async def _get_embedding(self, text: str) -> list[float]:
-        """Generate an embedding vector for text using Anthropic's Voyager model.
+        """Generate an embedding vector using the Voyage API.
 
-        Falls back to a simple hash-based embedding if the API is unavailable.
+        Falls back to a deterministic hash-based embedding if the API is
+        unavailable or unconfigured.
         """
-        if not self._embedding_client:
+        if not self._voyage_client:
             return self._fallback_embedding(text)
 
         try:
-            # Use Anthropic's embedding via a small Claude call to summarize + hash
-            # In production, use a dedicated embedding model like voyage-3
-            response = await self._embedding_client.messages.create(
-                model="claude-haiku-4-5-20251001",
-                max_tokens=1,
-                system="Return only the number 1.",
-                messages=[{"role": "user", "content": text[:500]}],
+            response = await self._voyage_client.post(
+                "/embeddings",
+                json={
+                    "model": settings.voyage_model,
+                    "input": [text[:8000]],  # Voyage supports up to 16k tokens
+                    "input_type": "document",
+                    "output_dimension": settings.voyage_dimensions,
+                },
             )
-            # For now, use a deterministic hash-based embedding as a placeholder
-            # Replace with actual embedding API (e.g., voyage-3) in production
-            return self._fallback_embedding(text)
+            response.raise_for_status()
+            data = response.json()
+            embedding = data["data"][0]["embedding"]
+            return embedding
         except Exception:
-            log.warning("Embedding API unavailable, using fallback")
+            log.warning("Voyage API unavailable, using fallback embedding")
             return self._fallback_embedding(text)
 
     @staticmethod

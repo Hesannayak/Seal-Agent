@@ -15,7 +15,7 @@ class TestMemoryEngine:
 
     def test_initial_state(self) -> None:
         assert self.engine._initialized is False
-        assert self.engine._embedding_client is None
+        assert self.engine._voyage_client is None
 
     def test_fallback_embedding_produces_correct_dimensions(self) -> None:
         """Fallback embedding should produce 1024-dimensional vector."""

@@ -12,6 +12,7 @@ from seal_agent.core.agent import SealAgent
 from seal_agent.api.routes import agent as agent_routes
 from seal_agent.api.routes import prospects as prospect_routes
 from seal_agent.api.routes import deals as deal_routes
+from seal_agent.api.routes import webhooks as webhook_routes
 from seal_agent.api.middleware import setup_middleware
 
 
@@ -45,6 +46,7 @@ def create_app() -> FastAPI:
     app.include_router(agent_routes.router, prefix="/api/agent", tags=["Agent"])
     app.include_router(prospect_routes.router, prefix="/api/prospects", tags=["Prospects"])
     app.include_router(deal_routes.router, prefix="/api/deals", tags=["Deals"])
+    app.include_router(webhook_routes.router, prefix="/webhooks", tags=["Webhooks"])
 
     @app.get("/health")
     async def health_check() -> dict[str, str]:

@@ -21,6 +21,11 @@ class Settings(BaseSettings):
     anthropic_api_key: str = ""
     anthropic_model: str = "claude-sonnet-4-20250514"
 
+    # Voyage embeddings (uses Anthropic/Voyage API)
+    voyage_api_key: str = ""  # Falls back to anthropic_api_key if empty
+    voyage_model: str = "voyage-3"
+    voyage_dimensions: int = 1024
+
     # Database
     database_url: str = "postgresql+asyncpg://seal:seal@localhost:5432/seal_agent"
 
