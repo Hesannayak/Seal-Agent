@@ -31,9 +31,30 @@ class Settings(BaseSettings):
     api_host: str = "0.0.0.0"
     api_port: int = 8000
     api_secret_key: str = "change-me-in-production"
+    api_cors_origins: str = "http://localhost:3000"
 
     # Heartbeat
     heartbeat_enabled: bool = True
+
+    # Email integration
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_from_email: str = ""
+    smtp_from_name: str = "Seal-Agent"
+    imap_host: str = ""
+    imap_port: int = 993
+    imap_user: str = ""
+    imap_password: str = ""
+
+    # HubSpot integration
+    hubspot_api_key: str = ""
+    hubspot_base_url: str = "https://api.hubapi.com"
+
+    # Slack integration
+    slack_bot_token: str = ""
+    slack_signing_secret: str = ""
 
     model_config = {"env_prefix": "SEAL_", "env_file": ".env", "extra": "ignore"}
 
