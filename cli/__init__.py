@@ -1,0 +1,1 @@
+"""Seal-Agent CLI interface."""
